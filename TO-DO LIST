@@ -1,0 +1,97 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+struct Task {
+    std::string description;
+    bool completed;
+
+    Task(std::string desc) : description(desc), completed(false) {}
+};
+
+class ToDoList {
+private:
+    std::vector<Task> tasks;
+
+public:
+    void addTask(const std::string &description) {
+        tasks.emplace_back(description);
+    }
+
+    void viewTasks() const {
+        if (tasks.empty()) {
+            std::cout << "No tasks in the list." << std::endl;
+            return;
+        }
+        for (size_t i = 0; i < tasks.size(); ++i) {
+            std::cout << i + 1 << ". " << (tasks[i].completed ? "[Completed] " : "[Pending] ") << tasks[i].description << std::endl;
+        }
+    }
+
+    void markTaskAsCompleted(int taskIndex) {
+        if (taskIndex < 0 || taskIndex >= tasks.size()) {
+            std::cout << "Invalid task index." << std::endl;
+            return;
+        }
+        tasks[taskIndex].completed = true;
+    }
+
+    void removeTask(int taskIndex) {
+        if (taskIndex < 0 || taskIndex >= tasks.size()) {
+            std::cout << "Invalid task index." << std::endl;
+            return;
+        }
+        tasks.erase(tasks.begin() + taskIndex);
+    }
+};
+
+void displayMenu() {
+    std::cout << "\nTo-Do List Manager" << std::endl;
+    std::cout << "1. Add Task" << std::endl;
+    std::cout << "2. View Tasks" << std::endl;
+    std::cout << "3. Mark Task as Completed" << std::endl;
+    std::cout << "4. Remove Task" << std::endl;
+    std::cout << "5. Exit" << std::endl;
+    std::cout << "Choose an option: ";
+}
+
+int main() {
+    ToDoList toDoList;
+    int choice;
+    std::string description;
+    int taskIndex;
+
+    while (true) {
+        displayMenu();
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1:
+                std::cout << "Enter task description: ";
+                std::cin.ignore(); // Clear the newline character from the input buffer
+                std::getline(std::cin, description);
+                toDoList.addTask(description);
+                break;
+            case 2:
+                toDoList.viewTasks();
+                break;
+            case 3:
+                std::cout << "Enter task index to mark as completed: ";
+                std::cin >> taskIndex;
+                toDoList.markTaskAsCompleted(taskIndex - 1);
+                break;
+            case 4:
+                std::cout << "Enter task index to remove: ";
+                std::cin >> taskIndex;
+                toDoList.removeTask(taskIndex - 1);
+                break;
+            case 5:
+                std::cout << "Exiting..." << std::endl;
+                return 0;
+            default:
+                std::cout << "Invalid option. Please try again." << std::endl;
+        }
+    }
+
+    return 0;
+}
