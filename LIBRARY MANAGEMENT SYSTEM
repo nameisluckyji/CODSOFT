@@ -1,0 +1,168 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <ctime>
+
+const int FINE_PER_DAY = 1;  // Fine per overdue day
+
+struct Book {
+    std::string title;
+    std::string author;
+    std::string ISBN;
+    bool isAvailable;
+
+    Book(std::string t, std::string a, std::string isbn)
+        : title(t), author(a), ISBN(isbn), isAvailable(true) {}
+};
+
+struct Borrower {
+    std::string name;
+    std::string borrowedISBN;
+    time_t borrowTime;
+    bool hasBook;
+
+    Borrower(std::string n) : name(n), hasBook(false) {}
+};
+
+class LibrarySystem {
+private:
+    std::vector<Book> books;
+    std::vector<Borrower> borrowers;
+
+public:
+    void addBook(const std::string& title, const std::string& author, const std::string& ISBN) {
+        books.emplace_back(title, author, ISBN);
+    }
+
+    void addBorrower(const std::string& name) {
+        borrowers.emplace_back(name);
+    }
+
+    void searchBook(const std::string& query) const {
+        bool found = false;
+        for (const auto& book : books) {
+            if (book.title.find(query) != std::string::npos || 
+                book.author.find(query) != std::string::npos || 
+                book.ISBN.find(query) != std::string::npos) {
+                std::cout << "Title: " << book.title << ", Author: " << book.author 
+                          << ", ISBN: " << book.ISBN << ", Available: " 
+                          << (book.isAvailable ? "Yes" : "No") << std::endl;
+                found = true;
+            }
+        }
+        if (!found) {
+            std::cout << "No book found with the given query." << std::endl;
+        }
+    }
+
+    void checkoutBook(const std::string& ISBN, const std::string& borrowerName) {
+        auto book = std::find_if(books.begin(), books.end(), [&ISBN](const Book& b) { return b.ISBN == ISBN; });
+        if (book == books.end() || !book->isAvailable) {
+            std::cout << "Book not available." << std::endl;
+            return;
+        }
+
+        auto borrower = std::find_if(borrowers.begin(), borrowers.end(), [&borrowerName](const Borrower& b) { return b.name == borrowerName; });
+        if (borrower == borrowers.end()) {
+            std::cout << "Borrower not found." << std::endl;
+            return;
+        }
+
+        book->isAvailable = false;
+        borrower->borrowedISBN = ISBN;
+        borrower->borrowTime = std::time(nullptr);
+        borrower->hasBook = true;
+        std::cout << "Book checked out successfully." << std::endl;
+    }
+
+    void returnBook(const std::string& borrowerName) {
+        auto borrower = std::find_if(borrowers.begin(), borrowers.end(), [&borrowerName](const Borrower& b) { return b.name == borrowerName; });
+        if (borrower == borrowers.end() || !borrower->hasBook) {
+            std::cout << "No borrowed book found for this borrower." << std::endl;
+            return;
+        }
+
+        auto book = std::find_if(books.begin(), books.end(), [&borrower](const Book& b) { return b.ISBN == borrower->borrowedISBN; });
+        if (book == books.end()) {
+            std::cout << "Book not found." << std::endl;
+            return;
+        }
+
+        time_t currentTime = std::time(nullptr);
+        int daysBorrowed = (currentTime - borrower->borrowTime) / (60 * 60 * 24);
+        int fine = std::max(0, daysBorrowed - 14) * FINE_PER_DAY; // Assuming 14 days borrow period
+
+        book->isAvailable = true;
+        borrower->hasBook = false;
+        std::cout << "Book returned successfully. Fine: $" << fine << std::endl;
+    }
+};
+
+void displayMenu() {
+    std::cout << "\nLibrary Management System" << std::endl;
+    std::cout << "1. Add Book" << std::endl;
+    std::cout << "2. Add Borrower" << std::endl;
+    std::cout << "3. Search Book" << std::endl;
+    std::cout << "4. Checkout Book" << std::endl;
+    std::cout << "5. Return Book" << std::endl;
+    std::cout << "6. Exit" << std::endl;
+    std::cout << "Choose an option: ";
+}
+
+int main() {
+    LibrarySystem library;
+    int choice;
+    std::string title, author, ISBN, name, query;
+
+    while (true) {
+        displayMenu();
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1:
+                std::cout << "Enter book title: ";
+                std::cin.ignore();
+                std::getline(std::cin, title);
+                std::cout << "Enter book author: ";
+                std::getline(std::cin, author);
+                std::cout << "Enter book ISBN: ";
+                std::getline(std::cin, ISBN);
+                library.addBook(title, author, ISBN);
+                break;
+            case 2:
+                std::cout << "Enter borrower name: ";
+                std::cin.ignore();
+                std::getline(std::cin, name);
+                library.addBorrower(name);
+                break;
+            case 3:
+                std::cout << "Enter search query (title/author/ISBN): ";
+                std::cin.ignore();
+                std::getline(std::cin, query);
+                library.searchBook(query);
+                break;
+            case 4:
+                std::cout << "Enter book ISBN: ";
+                std::cin.ignore();
+                std::getline(std::cin, ISBN);
+                std::cout << "Enter borrower name: ";
+                std::getline(std::cin, name);
+                library.checkoutBook(ISBN, name);
+                break;
+            case 5:
+                std::cout << "Enter borrower name: ";
+                std::cin.ignore();
+                std::getline(std::cin, name);
+                library.returnBook(name);
+                break;
+            case 6:
+                std::cout << "Exiting..." << std::endl;
+                return 0;
+            default:
+                std::cout << "Invalid option. Please try again." << std::endl;
+        }
+    }
+
+    return 0;
+}
